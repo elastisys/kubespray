@@ -17,6 +17,10 @@ data "openstack_images_image_v2" "image_master" {
 
 data "template_file" "cloudinit" {
   template = file("${path.module}/templates/cloudinit.yaml")
+  vars = {
+    # template_file doesn't support lists
+    extra_partitions = ""
+  }
 }
 
 data "openstack_networking_network_v2" "k8s_network" {
@@ -156,6 +160,12 @@ resource "openstack_compute_servergroup_v2" "k8s_etcd" {
   policies = [var.etcd_server_group_policy]
 }
 
+resource "openstack_compute_servergroup_v2" "k8s_node_additional" {
+  for_each = var.additional_server_groups
+  name     = "k8s-${each.key}-srvgrp"
+  policies = [each.value.policy]
+}
+
 locals {
 # master groups
   master_sec_groups = compact([
@@ -185,6 +195,27 @@ locals {
   image_to_use_gfs = var.image_gfs_uuid != "" ? var.image_gfs_uuid : var.image_uuid != "" ? var.image_uuid : data.openstack_images_image_v2.gfs_image[0].id
 # image_master uuidimage_gfs_uuid
   image_to_use_master = var.image_master_uuid != "" ? var.image_master_uuid : var.image_uuid != "" ? var.image_uuid : data.openstack_images_image_v2.image_master[0].id
+
+  k8s_nodes_settings = {
+    for name, node in var.k8s_nodes :
+      name => {
+        "use_local_disk" = (node.root_volume_size_in_gb != null ? node.root_volume_size_in_gb : var.node_root_volume_size_in_gb) == 0,
+        "image_id"       = node.image_id != null ? node.image_id : local.image_to_use_node,
+        "volume_size"    = node.root_volume_size_in_gb != null ? node.root_volume_size_in_gb : var.node_root_volume_size_in_gb,
+        "volume_type"    = node.volume_type != null ? node.volume_type : var.node_volume_type,
+        "server_group"   = node.server_group != null ? [openstack_compute_servergroup_v2.k8s_node_additional[node.server_group].id] : (var.node_server_group_policy != ""  ? [openstack_compute_servergroup_v2.k8s_node[0].id] : [])
+      }
+  }
+
+  k8s_masters_settings = {
+    for name, node in var.k8s_masters :
+      name => {
+        "use_local_disk" = (node.root_volume_size_in_gb != null ? node.root_volume_size_in_gb : var.master_root_volume_size_in_gb) == 0,
+        "image_id"       = node.image_id != null ? node.image_id : local.image_to_use_master,
+        "volume_size"    = node.root_volume_size_in_gb != null ? node.root_volume_size_in_gb : var.master_root_volume_size_in_gb,
+        "volume_type"    = node.volume_type != null ? node.volume_type : var.master_volume_type,
+      }
+  }
 }
 
 resource "openstack_networking_port_v2" "bastion_port" {
@@ -315,17 +346,17 @@ resource "openstack_compute_instance_v2" "k8s_masters" {
   for_each          = var.number_of_k8s_masters == 0 && var.number_of_k8s_masters_no_etcd == 0 && var.number_of_k8s_masters_no_floating_ip == 0 && var.number_of_k8s_masters_no_floating_ip_no_etcd == 0 ? var.k8s_masters : {}
   name              = "${var.cluster_name}-k8s-${each.key}"
   availability_zone = each.value.az
-  image_id          = var.master_root_volume_size_in_gb == 0 ? local.image_to_use_master : null
+  image_id          = local.k8s_masters_settings[each.key].use_local_disk ? local.k8s_masters_settings[each.key].image_id : null
   flavor_id         = each.value.flavor
   key_pair          = openstack_compute_keypair_v2.k8s.name
 
   dynamic "block_device" {
-    for_each = var.master_root_volume_size_in_gb > 0 ? [local.image_to_use_master] : []
+    for_each = !local.k8s_masters_settings[each.key].use_local_disk ? [local.k8s_masters_settings[each.key].image_id] : []
     content {
-      uuid                  = local.image_to_use_master
+      uuid                  = block_device.value
       source_type           = "image"
-      volume_size           = var.master_root_volume_size_in_gb
-      volume_type           = var.master_volume_type
+      volume_size           = local.k8s_masters_settings[each.key].volume_size
+      volume_type           = local.k8s_masters_settings[each.key].volume_type
       boot_index            = 0
       destination_type      = "volume"
       delete_on_termination = true
@@ -679,9 +710,9 @@ resource "openstack_compute_instance_v2" "k8s_node_no_floating_ip" {
   }
 
   dynamic "scheduler_hints" {
-    for_each = var.node_server_group_policy != "" ? [openstack_compute_servergroup_v2.k8s_node[0]] : []
+    for_each = var.node_server_group_policy != "" ? [openstack_compute_servergroup_v2.k8s_node[0].id] : []
     content {
-      group = openstack_compute_servergroup_v2.k8s_node[0].id
+      group = scheduler_hints.value
     }
   }
 
@@ -711,18 +742,20 @@ resource "openstack_compute_instance_v2" "k8s_nodes" {
   for_each          = var.number_of_k8s_nodes == 0 && var.number_of_k8s_nodes_no_floating_ip == 0 ? var.k8s_nodes : {}
   name              = "${var.cluster_name}-k8s-node-${each.key}"
   availability_zone = each.value.az
-  image_id          = var.node_root_volume_size_in_gb == 0 ? local.image_to_use_node : null
+  image_id          = local.k8s_nodes_settings[each.key].use_local_disk ? local.k8s_nodes_settings[each.key].image_id : null
   flavor_id         = each.value.flavor
   key_pair          = openstack_compute_keypair_v2.k8s.name
-  user_data         = data.template_file.cloudinit.rendered
+  user_data         = each.value.cloudinit != null ? templatefile("${path.module}/templates/cloudinit.yaml", {
+    extra_partitions = each.value.cloudinit.extra_partitions
+  }) : data.template_file.cloudinit.rendered
 
   dynamic "block_device" {
-    for_each = var.node_root_volume_size_in_gb > 0 ? [local.image_to_use_node] : []
+    for_each = !local.k8s_nodes_settings[each.key].use_local_disk ? [local.k8s_nodes_settings[each.key].image_id] : []
     content {
-      uuid                  = local.image_to_use_node
+      uuid                  = block_device.value
       source_type           = "image"
-      volume_size           = var.node_root_volume_size_in_gb
-      volume_type           = var.node_volume_type
+      volume_size           = local.k8s_nodes_settings[each.key].volume_size
+      volume_type           = local.k8s_nodes_settings[each.key].volume_type
       boot_index            = 0
       destination_type      = "volume"
       delete_on_termination = true
@@ -734,15 +767,15 @@ resource "openstack_compute_instance_v2" "k8s_nodes" {
   }
 
   dynamic "scheduler_hints" {
-    for_each = var.node_server_group_policy != "" ? [openstack_compute_servergroup_v2.k8s_node[0]] : []
+    for_each = local.k8s_nodes_settings[each.key].server_group
     content {
-      group = openstack_compute_servergroup_v2.k8s_node[0].id
+      group = scheduler_hints.value
     }
   }
 
   metadata = {
     ssh_user         = var.ssh_user
-    kubespray_groups = "kube_node,k8s_cluster,%{if each.value.floating_ip == false}no_floating,%{endif}${var.supplementary_node_groups},${try(each.value.extra_groups, "")}"
+    kubespray_groups = "kube_node,k8s_cluster,%{if each.value.floating_ip == false}no_floating,%{endif}${var.supplementary_node_groups}${each.value.extra_groups != null ? ",${each.value.extra_groups}" : ""}"
     depends_on       = var.network_router_id
     use_access_ip    = var.use_access_ip
   }
