@@ -116,9 +116,35 @@ variable "k8s_allowed_egress_ips" {
   type = list
 }
 
-variable "k8s_masters" {}
+variable "k8s_masters" {
+  type = map(object({
+    az                     = string
+    flavor                 = string
+    floating_ip            = bool
+    etcd                   = bool
+    image_id               = optional(string)
+    root_volume_size_in_gb = optional(number)
+    volume_type            = optional(string)
+  }))
+}
 
-variable "k8s_nodes" {}
+variable "k8s_nodes" {
+  type = map(object({
+    az                       = string
+    flavor                   = string
+    floating_ip              = bool
+    image_id                 = optional(string)
+    root_volume_size_in_gb   = optional(number)
+    volume_type              = optional(string)
+    additional_server_groups = optional(list(string))
+  }))
+}
+
+variable "additional_server_groups" {
+  type = map(object({
+    policy = string
+  }))
+}
 
 variable "supplementary_master_groups" {
   default = ""

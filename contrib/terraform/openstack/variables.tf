@@ -294,10 +294,35 @@ variable "router_internal_port_id" {
 
 variable "k8s_masters" {
   default = {}
+  type = map(object({
+    az                     = string
+    flavor                 = string
+    floating_ip            = bool
+    etcd                   = bool
+    image_id               = optional(string)
+    root_volume_size_in_gb = optional(number)
+    volume_type            = optional(string)
+  }))
 }
 
 variable "k8s_nodes" {
   default = {}
+  type = map(object({
+    az                     = string
+    flavor                 = string
+    floating_ip            = bool
+    image_id               = optional(string)
+    root_volume_size_in_gb = optional(number)
+    volume_type            = optional(string)
+    additional_server_groups = optional(list(string))
+  }))
+}
+
+variable "additional_server_groups" {
+  default = {}
+  type = map(object({
+    policy = string
+  }))
 }
 
 variable "extra_sec_groups" {
