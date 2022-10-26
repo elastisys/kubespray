@@ -314,7 +314,16 @@ variable "k8s_nodes" {
     image_id               = optional(string)
     root_volume_size_in_gb = optional(number)
     volume_type            = optional(string)
-    additional_server_groups = optional(list(string))
+    server_group           = optional(string)
+    cloudinit              = optional(object({
+      extra_partitions = list(object({
+        volume_path     = string
+        partition_path  = string
+        partition_start = string
+        partition_end   = string
+        mount_path      = string
+      }))
+    }))
   }))
 }
 
