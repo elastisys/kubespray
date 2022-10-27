@@ -207,14 +207,24 @@ locals {
 # image_master uuidimage_gfs_uuid
   image_to_use_master = var.image_master_uuid != "" ? var.image_master_uuid : var.image_uuid != "" ? var.image_uuid : data.openstack_images_image_v2.image_master[0].id
 
-  node_settings = {
+  k8s_nodes_settings = {
     for name, node in var.k8s_nodes :
       name => {
         "use_local_disk" = (node.root_volume_size_in_gb != null ? node.root_volume_size_in_gb : var.node_root_volume_size_in_gb) == 0,
-        "image_id"       = try(node.image_id, local.image_to_use_node),
-        "volume_size"    = try(node.root_volume_size_in_gb, var.node_root_volume_size_in_gb),
-        "volume_type"    = try(node.volume_type, var.node_volume_type),
+        "image_id"       = node.image_id != null ? node.image_id : local.image_to_use_node,
+        "volume_size"    = node.root_volume_size_in_gb != null ? node.root_volume_size_in_gb : var.node_root_volume_size_in_gb,
+        "volume_type"    = node.volume_type != null ? node.volume_type : var.node_volume_type,
         "server_group"   = node.server_group != null ? [openstack_compute_servergroup_v2.k8s_node_additional[node.server_group].id] : (var.node_server_group_policy != ""  ? [openstack_compute_servergroup_v2.k8s_node[0].id] : [])
+      }
+  }
+
+  k8s_masters_settings = {
+    for name, node in var.k8s_masters :
+      name => {
+        "use_local_disk" = (node.root_volume_size_in_gb != null ? node.root_volume_size_in_gb : var.master_root_volume_size_in_gb) == 0,
+        "image_id"       = node.image_id != null ? node.image_id : local.image_to_use_master,
+        "volume_size"    = node.root_volume_size_in_gb != null ? node.root_volume_size_in_gb : var.master_root_volume_size_in_gb,
+        "volume_type"    = node.volume_type != null ? node.volume_type : var.master_volume_type,
       }
   }
 }
@@ -227,8 +237,11 @@ resource "openstack_networking_port_v2" "bastion_port" {
   port_security_enabled = var.force_null_port_security ? null : var.port_security_enabled
   security_group_ids    = var.port_security_enabled ? local.bastion_sec_groups : null
   no_security_groups    = var.port_security_enabled ? null : false
-  fixed_ip {
-    subnet_id = var.private_subnet_id
+  dynamic "fixed_ip" {
+    for_each = var.private_subnet_id == "" ? [] : [true]
+    content {
+      subnet_id = var.private_subnet_id
+    }
   }
 
   depends_on = [
@@ -280,8 +293,11 @@ resource "openstack_networking_port_v2" "k8s_master_port" {
   port_security_enabled = var.force_null_port_security ? null : var.port_security_enabled
   security_group_ids    = var.port_security_enabled ? local.master_sec_groups : null
   no_security_groups    = var.port_security_enabled ? null : false
-  fixed_ip {
-    subnet_id = var.private_subnet_id
+  dynamic "fixed_ip" {
+    for_each = var.private_subnet_id == "" ? [] : [true]
+    content {
+      subnet_id = var.private_subnet_id
+    }
   }
 
   depends_on = [
@@ -359,17 +375,17 @@ resource "openstack_compute_instance_v2" "k8s_masters" {
   for_each          = var.number_of_k8s_masters == 0 && var.number_of_k8s_masters_no_etcd == 0 && var.number_of_k8s_masters_no_floating_ip == 0 && var.number_of_k8s_masters_no_floating_ip_no_etcd == 0 ? var.k8s_masters : {}
   name              = "${var.cluster_name}-k8s-${each.key}"
   availability_zone = each.value.az
-  image_id          = (each.value.root_volume_size_in_gb != null ? each.value.root_volume_size_in_gb : var.master_root_volume_size_in_gb) == 0 ? try(each.value.image_id, local.image_to_use_master) : null
+  image_id          = local.k8s_masters_settings[each.key].use_local_disk ? local.k8s_masters_settings[each.key].image_id : null
   flavor_id         = each.value.flavor
   key_pair          = openstack_compute_keypair_v2.k8s.name
 
   dynamic "block_device" {
-    for_each = (each.value.root_volume_size_in_gb != null ? each.value.root_volume_size_in_gb : var.master_root_volume_size_in_gb) > 0 ? [try(each.value.image_id, local.image_to_use_master)] : []
+    for_each = !local.k8s_masters_settings[each.key].use_local_disk ? [local.k8s_masters_settings[each.key].image_id] : []
     content {
       uuid                  = block_device.value
       source_type           = "image"
-      volume_size           = try(each.value.root_volume_size_in_gb, var.master_root_volume_size_in_gb)
-      volume_type           = try(each.value.volume_type, var.master_volume_type)
+      volume_size           = local.k8s_masters_settings[each.key].volume_size
+      volume_type           = local.k8s_masters_settings[each.key].volume_type
       boot_index            = 0
       destination_type      = "volume"
       delete_on_termination = true
@@ -407,8 +423,11 @@ resource "openstack_networking_port_v2" "k8s_master_no_etcd_port" {
   port_security_enabled = var.force_null_port_security ? null : var.port_security_enabled
   security_group_ids    = var.port_security_enabled ? local.master_sec_groups : null
   no_security_groups    = var.port_security_enabled ? null : false
-  fixed_ip {
-    subnet_id = var.private_subnet_id
+  dynamic "fixed_ip" {
+    for_each = var.private_subnet_id == "" ? [] : [true]
+    content {
+      subnet_id = var.private_subnet_id
+    }
   }
 
   depends_on = [
@@ -470,8 +489,11 @@ resource "openstack_networking_port_v2" "etcd_port" {
   port_security_enabled = var.force_null_port_security ? null : var.port_security_enabled
   security_group_ids    = var.port_security_enabled ? local.etcd_sec_groups : null
   no_security_groups    = var.port_security_enabled ? null : false
-  fixed_ip {
-    subnet_id = var.private_subnet_id
+  dynamic "fixed_ip" {
+    for_each = var.private_subnet_id == "" ? [] : [true]
+    content {
+      subnet_id = var.private_subnet_id
+    }
   }
 
   depends_on = [
@@ -527,8 +549,11 @@ resource "openstack_networking_port_v2" "k8s_master_no_floating_ip_port" {
   port_security_enabled = var.force_null_port_security ? null : var.port_security_enabled
   security_group_ids    = var.port_security_enabled ? local.master_sec_groups : null
   no_security_groups    = var.port_security_enabled ? null : false
-  fixed_ip {
-    subnet_id = var.private_subnet_id
+  dynamic "fixed_ip" {
+    for_each = var.private_subnet_id == "" ? [] : [true]
+    content {
+      subnet_id = var.private_subnet_id
+    }
   }
 
   depends_on = [
@@ -584,8 +609,11 @@ resource "openstack_networking_port_v2" "k8s_master_no_floating_ip_no_etcd_port"
   port_security_enabled = var.force_null_port_security ? null : var.port_security_enabled
   security_group_ids    = var.port_security_enabled ? local.master_sec_groups : null
   no_security_groups    = var.port_security_enabled ? null : false
-  fixed_ip {
-    subnet_id = var.private_subnet_id
+  dynamic "fixed_ip" {
+    for_each = var.private_subnet_id == "" ? [] : [true]
+    content {
+      subnet_id = var.private_subnet_id
+    }
   }
 
   depends_on = [
@@ -642,8 +670,11 @@ resource "openstack_networking_port_v2" "k8s_node_port" {
   port_security_enabled = var.force_null_port_security ? null : var.port_security_enabled
   security_group_ids    = var.port_security_enabled ? local.worker_sec_groups : null
   no_security_groups    = var.port_security_enabled ? null : false
-  fixed_ip {
-    subnet_id = var.private_subnet_id
+  dynamic "fixed_ip" {
+    for_each = var.private_subnet_id == "" ? [] : [true]
+    content {
+      subnet_id = var.private_subnet_id
+    }
   }
 
   depends_on = [
@@ -705,8 +736,11 @@ resource "openstack_networking_port_v2" "k8s_node_no_floating_ip_port" {
   port_security_enabled = var.force_null_port_security ? null : var.port_security_enabled
   security_group_ids    = var.port_security_enabled ? local.worker_sec_groups : null
   no_security_groups    = var.port_security_enabled ? null : false
-  fixed_ip {
-    subnet_id = var.private_subnet_id
+  dynamic "fixed_ip" {
+    for_each = var.private_subnet_id == "" ? [] : [true]
+    content {
+      subnet_id = var.private_subnet_id
+    }
   }
 
   depends_on = [
@@ -779,7 +813,7 @@ resource "openstack_compute_instance_v2" "k8s_nodes" {
   for_each          = var.number_of_k8s_nodes == 0 && var.number_of_k8s_nodes_no_floating_ip == 0 ? var.k8s_nodes : {}
   name              = "${var.cluster_name}-k8s-node-${each.key}"
   availability_zone = each.value.az
-  image_id          = local.node_settings[each.key].use_local_disk ? local.node_settings[each.key].image_id : null
+  image_id          = local.k8s_nodes_settings[each.key].use_local_disk ? local.k8s_nodes_settings[each.key].image_id : null
   flavor_id         = each.value.flavor
   key_pair          = openstack_compute_keypair_v2.k8s.name
   user_data         = each.value.cloudinit != null ? templatefile("${path.module}/templates/cloudinit.yaml", {
@@ -787,12 +821,12 @@ resource "openstack_compute_instance_v2" "k8s_nodes" {
   }) : data.template_file.cloudinit.rendered
 
   dynamic "block_device" {
-    for_each = !local.node_settings[each.key].use_local_disk ? [local.node_settings[each.key].image_id] : []
+    for_each = !local.k8s_nodes_settings[each.key].use_local_disk ? [local.k8s_nodes_settings[each.key].image_id] : []
     content {
       uuid                  = block_device.value
       source_type           = "image"
-      volume_size           = local.node_settings[each.key].volume_size
-      volume_type           = local.node_settings[each.key].volume_type
+      volume_size           = local.k8s_nodes_settings[each.key].volume_size
+      volume_type           = local.k8s_nodes_settings[each.key].volume_type
       boot_index            = 0
       destination_type      = "volume"
       delete_on_termination = true
@@ -804,7 +838,7 @@ resource "openstack_compute_instance_v2" "k8s_nodes" {
   }
 
   dynamic "scheduler_hints" {
-    for_each = local.node_settings[each.key].server_group
+    for_each = local.k8s_nodes_settings[each.key].server_group
     content {
       group = scheduler_hints.value
     }
@@ -812,7 +846,7 @@ resource "openstack_compute_instance_v2" "k8s_nodes" {
 
   metadata = {
     ssh_user         = var.ssh_user
-    kubespray_groups = "kube_node,k8s_cluster,%{if each.value.floating_ip == false}no_floating,%{endif}${var.supplementary_node_groups},${each.value.extra_groups != null ? each.value.extra_groups : ""}"
+    kubespray_groups = "kube_node,k8s_cluster,%{if each.value.floating_ip == false}no_floating,%{endif}${var.supplementary_node_groups}${each.value.extra_groups != null ? ",${each.value.extra_groups}" : ""}"
     depends_on       = var.network_router_id
     use_access_ip    = var.use_access_ip
   }
@@ -830,8 +864,11 @@ resource "openstack_networking_port_v2" "glusterfs_node_no_floating_ip_port" {
   port_security_enabled = var.force_null_port_security ? null : var.port_security_enabled
   security_group_ids    = var.port_security_enabled ? local.gfs_sec_groups : null
   no_security_groups    = var.port_security_enabled ? null : false
-  fixed_ip {
-    subnet_id = var.private_subnet_id
+  dynamic "fixed_ip" {
+    for_each = var.private_subnet_id == "" ? [] : [true]
+    content {
+      subnet_id = var.private_subnet_id
+    }
   }
 
   depends_on = [
