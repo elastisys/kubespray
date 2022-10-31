@@ -284,7 +284,7 @@ For your cluster, edit `inventory/$CLUSTER/cluster.tfvars`.
 |`master_server_group_policy` | Enable and use openstack nova servergroups for masters with set policy, default: "" (disabled) |
 |`node_server_group_policy` | Enable and use openstack nova servergroups for nodes with set policy, default: "" (disabled) |
 |`etcd_server_group_policy` | Enable and use openstack nova servergroups for etcd with set policy, default: "" (disabled) |
-|`additional_server_groups` | Extra server groups to create. Set "policy" to the policy for the group, default: [] (to not create any extra groups) |
+|`additional_server_groups` | Extra server groups to create. Set "policy" to the policy for the group, expected format is `[{"new-server-group" = {"policy" = "anti-affinity"}}]`, default: [] (to not create any extra groups) |
 |`use_access_ip` | If 1, nodes with floating IPs will transmit internal cluster traffic via floating IPs; if 0 private IPs will be used instead. Default value is 1. |
 |`port_security_enabled` | Allow to disable port security by setting this to `false`. `true` by default |
 |`force_null_port_security` | Set `null` instead of `true` or `false` for `port_security`. `false` by default |
