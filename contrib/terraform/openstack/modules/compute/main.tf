@@ -203,6 +203,7 @@ locals {
         "image_id"       = node.image_id != null ? node.image_id : local.image_to_use_node,
         "volume_size"    = node.root_volume_size_in_gb != null ? node.root_volume_size_in_gb : var.node_root_volume_size_in_gb,
         "volume_type"    = node.volume_type != null ? node.volume_type : var.node_volume_type,
+        "network_id"     = node.network_id != null ? node.network_id : (var.use_existing_network ? data.openstack_networking_network_v2.k8s_network[0].id : var.network_id)
         "server_group"   = node.server_group != null ? [openstack_compute_servergroup_v2.k8s_node_additional[node.server_group].id] : (var.node_server_group_policy != ""  ? [openstack_compute_servergroup_v2.k8s_node[0].id] : [])
       }
   }
@@ -727,7 +728,7 @@ resource "openstack_compute_instance_v2" "k8s_node_no_floating_ip" {
 resource "openstack_networking_port_v2" "k8s_nodes_port" {
   for_each              = var.number_of_k8s_nodes == 0 && var.number_of_k8s_nodes_no_floating_ip == 0 ? var.k8s_nodes : {}
   name                  = "${var.cluster_name}-k8s-node-${each.key}"
-  network_id            = var.use_existing_network ? data.openstack_networking_network_v2.k8s_network[0].id : var.network_id
+  network_id            = local.k8s_nodes_settings[each.key].network_id
   admin_state_up        = "true"
   port_security_enabled = var.force_null_port_security ? null : var.port_security_enabled
   security_group_ids    = var.port_security_enabled ? local.worker_sec_groups : null
