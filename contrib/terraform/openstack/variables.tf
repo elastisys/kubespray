@@ -18,6 +18,10 @@ variable "number_of_bastions" {
   default = 1
 }
 
+variable "number_of_bastions_no_floating_ip" {
+  default = 0
+}
+
 variable "number_of_k8s_masters" {
   default = 2
 }
