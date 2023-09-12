@@ -43,6 +43,7 @@ module "compute" {
   number_of_k8s_masters_no_floating_ip_no_etcd = var.number_of_k8s_masters_no_floating_ip_no_etcd
   number_of_k8s_nodes                          = var.number_of_k8s_nodes
   number_of_bastions                           = var.number_of_bastions
+  number_of_bastions_no_floating_ip            = var.number_of_bastions_no_floating_ip
   number_of_k8s_nodes_no_floating_ip           = var.number_of_k8s_nodes_no_floating_ip
   number_of_gfs_nodes_no_floating_ip           = var.number_of_gfs_nodes_no_floating_ip
   k8s_masters                                  = var.k8s_masters

@@ -24,6 +24,8 @@ variable "number_of_k8s_nodes_no_floating_ip" {}
 
 variable "number_of_bastions" {}
 
+variable "number_of_bastions_no_floating_ip" {}
+
 variable "number_of_gfs_nodes_no_floating_ip" {}
 
 variable "bastion_root_volume_size_in_gb" {}

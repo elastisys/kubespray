@@ -289,6 +289,62 @@ resource "openstack_compute_instance_v2" "bastion" {
   }
 }
 
+resource "openstack_networking_port_v2" "bastion_no_floating_ip_port" {
+  count                 = var.number_of_bastions_no_floating_ip
+  name                  = "${var.cluster_name}-bastion-nf-${count.index + 1}"
+  network_id            = var.use_existing_network ? data.openstack_networking_network_v2.k8s_network[0].id : var.network_id
+  admin_state_up        = "true"
+  port_security_enabled = var.force_null_port_security ? null : var.port_security_enabled
+  security_group_ids    = var.port_security_enabled ? local.bastion_sec_groups : null
+  no_security_groups    = var.port_security_enabled ? null : false
+  dynamic "fixed_ip" {
+    for_each = var.private_subnet_id == "" ? [] : [true]
+    content {
+      subnet_id = var.private_subnet_id
+    }
+  }
+
+  depends_on = [
+    var.network_router_id
+  ]
+}
+
+resource "openstack_compute_instance_v2" "bastion_no_floating_ip" {
+  name       = "${var.cluster_name}-bastion-nf-${count.index + 1}"
+  count      = var.number_of_bastions_no_floating_ip
+  image_id   = var.bastion_root_volume_size_in_gb == 0 ? local.image_to_use_node : null
+  flavor_id  = var.flavor_bastion
+  key_pair   = openstack_compute_keypair_v2.k8s.name
+  user_data  = data.cloudinit_config.cloudinit.rendered
+
+  dynamic "block_device" {
+    for_each = var.bastion_root_volume_size_in_gb > 0 ? [local.image_to_use_node] : []
+    content {
+      uuid                  = local.image_to_use_node
+      source_type           = "image"
+      volume_size           = var.bastion_root_volume_size_in_gb
+      boot_index            = 0
+      destination_type      = "volume"
+      delete_on_termination = true
+    }
+  }
+
+  network {
+    port = element(openstack_networking_port_v2.bastion_no_floating_ip_port.*.id, count.index)
+  }
+
+  metadata = {
+    ssh_user         = var.ssh_user
+    kubespray_groups = "bastion"
+    depends_on       = var.network_router_id
+    use_access_ip    = var.use_access_ip
+  }
+
+  provisioner "local-exec" {
+    command = "sed -e s/USER/${var.ssh_user}/ -e s/BASTION_ADDRESS/${self.access_ip_v4}/ ${path.module}/ansible_bastion_template.txt > ${var.group_vars_path}/no_floating.yml"
+  }
+}
+
 resource "openstack_networking_port_v2" "k8s_master_port" {
   count                 = var.number_of_k8s_masters
   name                  = "${var.cluster_name}-k8s-master-${count.index + 1}"
