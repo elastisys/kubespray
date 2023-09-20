@@ -158,13 +158,14 @@ variable "k8s_nodes" {
     additional_server_groups = optional(list(string))
     server_group           = optional(string)
     cloudinit              = optional(object({
-      extra_partitions = list(object({
+      extra_partitions = optional(list(object({
         volume_path     = string
         partition_path  = string
         partition_start = string
         partition_end   = string
         mount_path      = string
-      }))
+      })), [])
+      netplan_critical_dhcp_interface = optional(string, "")
     }))
   }))
 }
