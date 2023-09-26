@@ -229,6 +229,7 @@ locals {
         "volume_size"    = node.root_volume_size_in_gb != null ? node.root_volume_size_in_gb : var.master_root_volume_size_in_gb,
         "volume_type"    = node.volume_type != null ? node.volume_type : var.master_volume_type,
         "network_id"     = node.network_id != null ? node.network_id : (var.use_existing_network ? data.openstack_networking_network_v2.k8s_network[0].id : var.network_id)
+        "server_group"   = node.server_group != null ? [openstack_compute_servergroup_v2.k8s_node_additional[node.server_group].id] : (var.master_server_group_policy != ""  ? [openstack_compute_servergroup_v2.k8s_master[0].id] : [])
       }
   }
 }
@@ -401,9 +402,9 @@ resource "openstack_compute_instance_v2" "k8s_masters" {
   }
 
   dynamic "scheduler_hints" {
-    for_each = var.master_server_group_policy != "" ? [openstack_compute_servergroup_v2.k8s_master[0]] : []
+    for_each = local.k8s_masters_settings[each.key].server_group
     content {
-      group = openstack_compute_servergroup_v2.k8s_master[0].id
+      group = scheduler_hints.value
     }
   }
 
