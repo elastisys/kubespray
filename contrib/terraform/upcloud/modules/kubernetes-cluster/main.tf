@@ -521,6 +521,9 @@ resource "upcloud_loadbalancer_backend" "lb_backend" {
 
   loadbalancer = upcloud_loadbalancer.lb[0].id
   name         = "lb-backend-${each.key}"
+  properties {
+    outbound_proxy_protocol = var.loadbalancer_outbound_proxy_protocol
+  }
 }
 
 resource "upcloud_loadbalancer_frontend" "lb_frontend" {
@@ -531,6 +534,9 @@ resource "upcloud_loadbalancer_frontend" "lb_frontend" {
   mode                 = "tcp"
   port                 = each.value.port
   default_backend_name = upcloud_loadbalancer_backend.lb_backend[each.key].name
+  properties {
+    inbound_proxy_protocol = var.loadbalancer_inbound_proxy_protocol
+  }
 }
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_backend_member" {

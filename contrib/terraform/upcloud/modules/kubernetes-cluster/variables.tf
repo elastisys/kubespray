@@ -85,6 +85,14 @@ variable "loadbalancer_plan" {
   type = string
 }
 
+variable "loadbalancer_outbound_proxy_protocol" {
+  type = string
+}
+
+variable "loadbalancer_inbound_proxy_protocol" {
+  type = bool
+}
+
 variable "loadbalancers" {
   description = "Load balancers"
 

@@ -31,9 +31,12 @@ module "kubernetes" {
   master_allowed_ports      = var.master_allowed_ports
   worker_allowed_ports      = var.worker_allowed_ports
 
-  loadbalancer_enabled = var.loadbalancer_enabled
-  loadbalancer_plan    = var.loadbalancer_plan
-  loadbalancers        = var.loadbalancers
+  loadbalancer_enabled                 = var.loadbalancer_enabled
+  loadbalancer_plan                    = var.loadbalancer_plan
+  loadbalancer_outbound_proxy_protocol = var.loadbalancer_proxy_protocol ? "v2" : ""
+  loadbalancer_inbound_proxy_protocol  = var.loadbalancer_proxy_protocol
+  loadbalancer_timeout_client          = var.loadbalancer_timeout_client
+  loadbalancers                        = var.loadbalancers
 
   server_groups = var.server_groups
 }
