@@ -93,6 +93,10 @@ variable "loadbalancer_inbound_proxy_protocol" {
   type = bool
 }
 
+variable "loadbalancer_timeout_client" {
+  type = number
+}
+
 variable "loadbalancers" {
   description = "Load balancers"
 

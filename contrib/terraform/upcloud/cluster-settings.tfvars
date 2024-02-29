@@ -119,7 +119,7 @@ worker_allowed_ports = []
 loadbalancer_enabled        = false
 loadbalancer_plan           = "development"
 loadbalancer_proxy_protocol = false
-loadbalancer_timeout_clien  = 10
+loadbalancer_timeout_client = 10
 loadbalancers = {
   # "http" : {
   #   "port" : 80,

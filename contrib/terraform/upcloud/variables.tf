@@ -126,6 +126,11 @@ variable "loadbalancer_proxy_protocol" {
   default = false
 }
 
+variable "loadbalancer_timeout_client" {
+  type    = number
+  default = 10
+}
+
 variable "loadbalancers" {
   description = "Load balancers"
 

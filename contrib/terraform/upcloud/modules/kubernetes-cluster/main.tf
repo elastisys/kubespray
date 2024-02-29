@@ -536,6 +536,7 @@ resource "upcloud_loadbalancer_frontend" "lb_frontend" {
   default_backend_name = upcloud_loadbalancer_backend.lb_backend[each.key].name
   properties {
     inbound_proxy_protocol = var.loadbalancer_inbound_proxy_protocol
+    timeout_client         = var.loadbalancer_timeout_client
   }
 }
 
