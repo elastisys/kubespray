@@ -274,6 +274,7 @@ def openstack_host(resource, module_name):
         'access_ip_v6': raw_attrs['access_ip_v6'],
         'access_ip': raw_attrs['access_ip_v4'],
         'ip': raw_attrs['network.0.fixed_ip_v4'],
+        'ip6': raw_attrs['network.0.fixed_ip_v6'],
         'flavor': parse_dict(raw_attrs, 'flavor',
                              sep='_'),
         'id': raw_attrs['id'],
