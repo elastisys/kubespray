@@ -12,7 +12,9 @@ module "kubernetes" {
   source = "./modules/kubernetes-cluster"
 
   prefix = var.prefix
-  zone   = var.zone
+  zone          = var.zone
+  private_cloud = var.private_cloud
+  public_zone   = var.public_zone
 
   template_name = var.template_name
   username      = var.username
