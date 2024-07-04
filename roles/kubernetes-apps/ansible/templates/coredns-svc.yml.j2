@@ -28,3 +28,6 @@ spec:
     - name: metrics
       port: 9153
       protocol: TCP
+{% if enable_dual_stack_networks %}
+  ipFamilyPolicy: PreferDualStack
+{% endif %}
