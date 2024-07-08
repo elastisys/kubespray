@@ -4,7 +4,7 @@ private_cloud = false
 
 # Only used if private_cloud = true, public zone equivalent
 # For example use finnish public zone for finnish private zone
-public_zone   = "fi-hel2"
+public_zone = "fi-hel2"
 
 username = "ubuntu"
 

@@ -11,7 +11,7 @@ provider "upcloud" {
 module "kubernetes" {
   source = "./modules/kubernetes-cluster"
 
-  prefix = var.prefix
+  prefix        = var.prefix
   zone          = var.zone
   private_cloud = var.private_cloud
   public_zone   = var.public_zone
@@ -37,6 +37,12 @@ module "kubernetes" {
   loadbalancer_plan                    = var.loadbalancer_plan
   loadbalancer_outbound_proxy_protocol = var.loadbalancer_proxy_protocol ? "v2" : ""
   loadbalancers                        = var.loadbalancers
+
+  connect_router   = var.connect_router
+  gateways         = var.gateways
+  gateway_vpn_psks = var.gateway_vpn_psks
+  static_routes    = var.static_routes
+  network_peerings = var.network_peerings
 
   server_groups = var.server_groups
 }
