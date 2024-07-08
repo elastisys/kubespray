@@ -151,6 +151,9 @@ terraform destroy --var-file cluster-settings.tfvars \
       * `type`: Type of route
       * `static_network`: Destination prefix of the route; needs to be a valid IPv4 prefix
     * `remote_address`: The remote address for the tunnel
+* `gateway_vpn_psks`: Separate variable for providing psks for connection tunnels. Environmen variabel can be exported in the following format `export TF_VAR_gateway_vpn_psks='{"${gateway-name}-${connecton-name}-tunnel":{psk:"..."}}'`
+* `static_routes`: Static routes to apply to the router, requires `connect_router` is set to true
+* `network_peerings`: Other UpCloud private networks to peer with, requires `connect_router` is set to true
 * `server_groups`: Group servers together
   * `servers`: The servers that should be included in the group.
   * `anti_affinity_policy`: Defines if a server group is an anti-affinity group. Setting this to "strict" or yes" will result in all servers in the group being placed on separate compute hosts. The value can be "strict", "yes" or "no". "strict" refers to strict policy doesn't allow servers in the same server group to be on the same host. "yes" refers to best-effort policy and tries to put servers on different hosts, but this is not guaranteed.
