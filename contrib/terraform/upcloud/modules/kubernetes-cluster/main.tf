@@ -656,6 +656,7 @@ resource "upcloud_gateway_connection" "gateway_connection" {
   for_each = {
     for gc in local.gateway_connections : "${gc.gateway_name}-${gc.connection_name}" => gc
   }
+
   gateway = each.value.gateway_id
   name = "${local.resource-prefix}${each.key}-gateway-connection"
   type = each.value.type

@@ -151,7 +151,7 @@ terraform destroy --var-file cluster-settings.tfvars \
       * `type`: Type of route
       * `static_network`: Destination prefix of the route; needs to be a valid IPv4 prefix
     * `remote_address`: The remote address for the tunnel
-* `gateway_vpn_psks`: Separate variable for providing psks for connection tunnels. Environmen variabel can be exported in the following format `export TF_VAR_gateway_vpn_psks='{"${gateway-name}-${connecton-name}-tunnel":{psk:"..."}}'`
+* `gateway_vpn_psks`: Separate variable for providing psks for connection tunnels. Environment variabel can be exported in the following format `export TF_VAR_gateway_vpn_psks='{"${gateway-name}-${connecton-name}-tunnel":{psk:"..."}}'`
 * `static_routes`: Static routes to apply to the router, requires `connect_router` is set to true
 * `network_peerings`: Other UpCloud private networks to peer with, requires `connect_router` is set to true
 * `server_groups`: Group servers together
