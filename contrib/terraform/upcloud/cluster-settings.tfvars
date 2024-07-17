@@ -4,7 +4,7 @@ private_cloud = false
 
 # Only used if private_cloud = true, public zone equivalent
 # For example use finnish public zone for finnish private zone
-public_zone   = "fi-hel2"
+public_zone = "fi-hel2"
 
 username = "ubuntu"
 
@@ -152,4 +152,43 @@ server_groups = {
   #   ]
   #   anti_affinity_policy = "yes"
   # }
+}
+
+router_enable = false
+gateways = {
+  #   "gateway" : {
+  #     features: [ "vpn" ]
+  #     plan = "production"
+  #     connections = {
+  #       "connection" = {
+  #         name = "connection"
+  #         type = "ipsec"
+  #         remote_routes = {
+  #           "them" = {
+  #             type = "static"
+  #             static_network = "1.2.3.4/24"
+  #           }
+  #         }
+  #         local_routes = {
+  #           "me" = {
+  #             type = "static"
+  #             static_network = "4.3.2.1/24"
+  #           }
+  #         }
+  #         remote_address = "1.2.3.4"
+  #       }
+  #     }
+  #   }
+}
+# gateway_vpn_psks = {} # Should be loaded as an environment variable
+static_routes = {
+  #   "route": {
+  #     route: "1.2.3.4/24"
+  #     nexthop: "4.3.2.1"
+  #   }
+}
+network_peerings = {
+  #   "peering": {
+  #     remote_network: "uuid"
+  #   }
 }
