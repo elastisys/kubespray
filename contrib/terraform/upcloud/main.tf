@@ -38,7 +38,7 @@ module "kubernetes" {
   loadbalancer_outbound_proxy_protocol = var.loadbalancer_proxy_protocol ? "v2" : ""
   loadbalancers                        = var.loadbalancers
 
-  connect_router   = var.connect_router
+  router_enable    = var.router_enable
   gateways         = var.gateways
   gateway_vpn_psks = var.gateway_vpn_psks
   static_routes    = var.static_routes

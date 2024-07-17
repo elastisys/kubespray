@@ -124,7 +124,7 @@ variable "router_enable" {
 }
 
 variable "gateways" {
-  description = "Gateways that should be connected to the router, requires connect_router is set to true"
+  description = "Gateways that should be connected to the router, requires router_enable is set to true"
 
   type = map(object({
     features = list(string)
@@ -155,7 +155,7 @@ variable "gateway_vpn_psks" {
 }
 
 variable "static_routes" {
-  description = "Static routes to apply to the router, requires connect_router is set to true"
+  description = "Static routes to apply to the router, requires router_enable is set to true"
 
   type = map(object({
     nexthop = string
@@ -164,7 +164,7 @@ variable "static_routes" {
 }
 
 variable "network_peerings" {
-  description = "Other UpCloud private networks to peer with, requires connect_router is set to true"
+  description = "Other UpCloud private networks to peer with, requires router_enable is set to true"
 
   type = map(object({
     remote_network = string
