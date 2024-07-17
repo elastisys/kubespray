@@ -57,12 +57,12 @@ resource "upcloud_network" "private" {
 
   ip_network {
     address            = var.private_network_cidr
-    dhcp_default_route = var.connect_router
+    dhcp_default_route = var.router_enable
     dhcp               = true
     family             = "IPv4"
   }
   
-  router = var.connect_router ? upcloud_router.router[0].id : null
+  router = var.router_enable ? upcloud_router.router[0].id : null
 }
 
 resource "upcloud_storage" "additional_disks" {
@@ -622,7 +622,7 @@ resource "upcloud_server_group" "server_groups" {
 }
 
 resource "upcloud_router" "router" {
-  count = var.connect_router ? 1 : 0
+  count = var.router_enable ? 1 : 0
 
   name = "${local.resource-prefix}router"
 
@@ -640,7 +640,7 @@ resource "upcloud_router" "router" {
 }
 
 resource "upcloud_gateway" "gateway" {
-  for_each = var.connect_router ? var.gateways : {}
+  for_each = var.router_enable ? var.gateways : {}
   name = "${local.resource-prefix}${each.key}-gateway"
   zone = var.zone
 

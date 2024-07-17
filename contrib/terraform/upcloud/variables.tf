@@ -158,8 +158,8 @@ variable "server_groups" {
   default = {}
 }
 
-variable "connect_router" {
-  description = "If a router should be connected to the private network or not"
+variable "router_enable" {
+  description = "If a router should be enabled and connected to the private network or not"
 
   type    = bool
   default = false

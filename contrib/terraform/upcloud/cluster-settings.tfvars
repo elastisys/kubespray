@@ -154,7 +154,7 @@ server_groups = {
   # }
 }
 
-connect_router = false
+router_enable = false
 gateways = {
 #   "gateway" : {
 #     features: [ "vpn" ]
