@@ -61,7 +61,7 @@ resource "upcloud_network" "private" {
     dhcp               = true
     family             = "IPv4"
   }
-  
+
   router = var.router_enable ? upcloud_router.router[0].id : null
 }
 
@@ -583,7 +583,7 @@ resource "upcloud_loadbalancer_frontend" "lb_frontend" {
   networks {
     name = "Public-Net"
   }
-  
+
   dynamic "networks" {
     for_each = each.value.allow_internal_frontend ? [1] : []
 
