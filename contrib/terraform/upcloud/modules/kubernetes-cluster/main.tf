@@ -546,16 +546,27 @@ resource "upcloud_loadbalancer" "lb" {
   name              = "${local.resource-prefix}lb"
   plan              = var.loadbalancer_plan
   zone              = var.private_cloud ? var.public_zone : var.zone
-  networks {
-    name    = "Private-Net"
-    type    = "private"
-    family  = "IPv4"
-    network = upcloud_network.private.id
+  network           = var.loadbalancer_legacy_network ? upcloud_network.private.id : null
+
+  dynamic "networks" {
+    for_each = var.loadbalancer_legacy_network ? [] : [1]
+
+    content {
+      name    = "Private-Net"
+      type    = "private"
+      family  = "IPv4"
+      network = upcloud_network.private.id
+    }
   }
-  networks {
-    name   = "Public-Net"
-    type   = "public"
-    family = "IPv4"
+
+  dynamic "networks" {
+    for_each = var.loadbalancer_legacy_network ? [] : [1]
+
+    content {
+      name   = "Public-Net"
+      type   = "public"
+      family = "IPv4"
+    }
   }
 
   lifecycle {
