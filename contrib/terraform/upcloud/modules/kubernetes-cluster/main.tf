@@ -35,15 +35,18 @@ locals {
 
   gateway_connection_tunnels = flatten([
     for gateway_name, gateway in var.gateways : [
-      for connection_name, connection in gateway.connections : {
+      for connection_name, connection in gateway.connections : [
+        for tunnel_name, tunnel in connection.tunnels : {
           "gateway_id" = upcloud_gateway.gateway[gateway_name].id
           "gateway_name" = gateway_name
           "connection_id" = upcloud_gateway_connection.gateway_connection["${gateway_name}-${connection_name}"].id
           "connection_name" = connection_name
+          "tunnel_name" = tunnel_name
           "local_address_name" = tolist(upcloud_gateway.gateway[gateway_name].address).0.name
-          "remote_address" = connection.remote_address
-          "ipsec_properties" = connection.ipsec_properties
-      }
+          "remote_address" = tunnel.remote_address
+          "ipsec_properties" = tunnel.ipsec_properties
+        }
+      ]
     ]
   ])
 
@@ -62,7 +65,7 @@ resource "upcloud_network" "private" {
     dhcp               = true
     family             = "IPv4"
   }
-  
+
   router = var.router_enable ? upcloud_router.router[0].id : null
 }
 
@@ -600,7 +603,7 @@ resource "upcloud_loadbalancer_frontend" "lb_frontend" {
       name   = "Public-Net"
     }
   }
-  
+
   dynamic "networks" {
     for_each = each.value.allow_internal_frontend ? [1] : []
 
@@ -701,7 +704,7 @@ resource "upcloud_gateway_connection" "gateway_connection" {
 
 resource "upcloud_gateway_connection_tunnel" "gateway_connection_tunnel" {
   for_each = {
-    for gct in local.gateway_connection_tunnels : "${gct.gateway_name}-${gct.connection_name}-tunnel" => gct
+    for gct in local.gateway_connection_tunnels : "${gct.gateway_name}-${gct.connection_name}-${gct.tunnel_name}-tunnel" => gct
   }
 
   connection_id = each.value.connection_id
