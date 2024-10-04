@@ -100,6 +100,8 @@ terraform destroy --var-file cluster-settings.tfvars \
 * `template_name`: The name or UUID  of a base image
 * `username`: a user to access the nodes, defaults to "ubuntu"
 * `private_network_cidr`: CIDR to use for the private network, defaults to "172.16.0.0/24"
+* `private_network_dns`: DNS servers to use for nodes with only private network. Requires user_data and will recreate existing nodes. Defaults to `[]`
+* `use_public_ips`: If a NIC connencted to the Public network should be attached. Defaults to `true`
 * `ssh_public_keys`: List of public SSH keys to install on all machines
 * `zone`: The zone where to run the cluster
 * `machines`: Machines to provision. Key of this object will be used as the name of the machine
@@ -108,6 +110,8 @@ terraform destroy --var-file cluster-settings.tfvars \
   * `cpu`: number of cpu cores
   * `mem`: memory size in MB
   * `disk_size`: The size of the storage in GB
+  * `force_public_ip`: If `use_public_ips` is set to false, this forces a public NIC on the machine. Useful if you're migrating from public nodes to only private. Defaults to `false`
+  * `force_no_user_data`: If `private_network_dns` is set existing nodes will be deleted. This forces this mahcine to not add the user_data. Useful if you're migrating from public nodes to only private. Defaults to `false`
   * `additional_disks`: Additional disks to attach to the node.
     * `size`: The size of the additional disk in GB
     * `tier`: The tier of disk to use (`maxiops` is the only one you can choose atm)
@@ -170,3 +174,20 @@ terraform destroy --var-file cluster-settings.tfvars \
 * `server_groups`: Group servers together
   * `servers`: The servers that should be included in the group.
   * `anti_affinity_policy`: Defines if a server group is an anti-affinity group. Setting this to "strict" or yes" will result in all servers in the group being placed on separate compute hosts. The value can be "strict", "yes" or "no". "strict" refers to strict policy doesn't allow servers in the same server group to be on the same host. "yes" refers to best-effort policy and tries to put servers on different hosts, but this is not guaranteed.
+
+# Migration
+
+When `null_resource.inventories` and `data.template_file.inventory` was changed to `local_file.inventory` the old state file needs to be cleaned of the old state.
+The error messages you'll see if you encounter this is:
+
+```
+Error: failed to read schema for null_resource.inventories in registry.terraform.io/hashicorp/null: failed to instantiate provider "registry.terraform.io/hashicorp/null" to obtain schema: unavailable provider "registry.terraform.io/hashicorp/null"
+Error: failed to read schema for data.template_file.inventory in registry.terraform.io/hashicorp/template: failed to instantiate provider "registry.terraform.io/hashicorp/template" to obtain schema: unavailable provider "registry.terraform.io/hashicorp/template"
+```
+
+This can be fixed with the following lines
+
+```bash
+terraform state rm -state=terraform.tfstate null_resource.inventories
+terraform state rm -state=terraform.tfstate data.template_file.inventory
+```
