@@ -32,6 +32,19 @@ variable "private_network_cidr" {
   default     = "172.16.0.0/24"
 }
 
+variable "dns_servers" {
+  description = "DNS servers that will be used by the nodes. Until [this is solved](https://github.com/UpCloudLtd/terraform-provider-upcloud/issues/562) this is done using user_data to reconfigure resolved"
+
+  type    = set(string)
+  default = []
+}
+
+variable "use_public_ips" {
+  description = "If all nodes should get a public IP"
+  type        = bool
+  default     = true
+}
+
 variable "machines" {
   description = "Cluster machines"
 
@@ -42,6 +55,8 @@ variable "machines" {
     mem       = string
     disk_size = number
     server_group : string
+    force_public_ip : optional(bool, false)
+    dns_servers : optional(set(string))
     additional_disks = map(object({
       size = number
       tier = string
@@ -82,6 +97,15 @@ variable "master_allowed_remote_ips" {
 
 variable "k8s_allowed_remote_ips" {
   description = "List of IP start/end addresses allowed to SSH to hosts"
+  type = list(object({
+    start_address = string
+    end_address   = string
+  }))
+  default = []
+}
+
+variable "bastion_allowed_remote_ips" {
+  description = "List of IP start/end addresses allowed to SSH to bastion"
   type = list(object({
     start_address = string
     end_address   = string
@@ -191,16 +215,16 @@ variable "gateways" {
       tunnels = optional(map(object({
         remote_address = string
         ipsec_properties = optional(object({
-          child_rekey_time = number
-          dpd_delay = number
-          dpd_timeout = number
-          ike_lifetime = number
-          rekey_time = number
-          phase1_algorithms = set(string)
-          phase1_dh_group_numbers = set(string)
+          child_rekey_time            = number
+          dpd_delay                   = number
+          dpd_timeout                 = number
+          ike_lifetime                = number
+          rekey_time                  = number
+          phase1_algorithms           = set(string)
+          phase1_dh_group_numbers     = set(string)
           phase1_integrity_algorithms = set(string)
-          phase2_algorithms = set(string)
-          phase2_dh_group_numbers = set(string)
+          phase2_algorithms           = set(string)
+          phase2_dh_group_numbers     = set(string)
           phase2_integrity_algorithms = set(string)
         }))
       })), {})
