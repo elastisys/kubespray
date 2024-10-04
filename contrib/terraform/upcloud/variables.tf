@@ -33,7 +33,7 @@ variable "private_network_cidr" {
 }
 
 variable "private_network_dns" {
-  description = "The DNS server announced by DHCP for the private network"
+  description = "The DNS server for nodes when using private network only"
 
   type    = set(string)
   default = []

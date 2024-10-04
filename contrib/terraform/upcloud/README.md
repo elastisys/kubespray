@@ -178,7 +178,14 @@ terraform destroy --var-file cluster-settings.tfvars \
 # Migration
 
 When `null_resource.inventories` and `data.template_file.inventory` was changed to `local_file.inventory` the old state file needs to be cleaned of the old state.
-This can be done with the following lines
+The error messages you'll see if you encounter this is:
+
+```
+Error: failed to read schema for null_resource.inventories in registry.terraform.io/hashicorp/null: failed to instantiate provider "registry.terraform.io/hashicorp/null" to obtain schema: unavailable provider "registry.terraform.io/hashicorp/null"
+Error: failed to read schema for data.template_file.inventory in registry.terraform.io/hashicorp/template: failed to instantiate provider "registry.terraform.io/hashicorp/template" to obtain schema: unavailable provider "registry.terraform.io/hashicorp/template"
+```
+
+This can be fixed with the following lines
 
 ```bash
 terraform state rm -state=terraform.tfstate null_resource.inventories
