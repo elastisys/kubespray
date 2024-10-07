@@ -79,7 +79,7 @@ locals {
         if nic.ip_address != null
       }
   }
-  
+
   node_user_data = <<EOF
 %{ if length(var.private_network_dns) > 0 ~}
 #!/bin/bash
@@ -99,7 +99,7 @@ resource "upcloud_network" "private" {
     dhcp_default_route = var.router_enable
     # TODO: When support for dhcp_dns for private networks are in, remove the user_data and enable it here.
     #       See more here https://github.com/UpCloudLtd/terraform-provider-upcloud/issues/562
-    # dhcp_dns           = length(var.private_network_dns) > 0 ? var.private_network_dns : null 
+    # dhcp_dns           = length(var.private_network_dns) > 0 ? var.private_network_dns : null
     dhcp               = true
     family             = "IPv4"
   }
@@ -135,6 +135,7 @@ resource "upcloud_server" "master" {
   template {
     storage = var.template_name
     size    = each.value.disk_size
+    encrypt = each.value.boot_disk_encrypt
   }
 
   dynamic "network_interface" {
@@ -201,6 +202,7 @@ resource "upcloud_server" "worker" {
   template {
     storage = var.template_name
     size    = each.value.disk_size
+    encrypt = each.value.boot_disk_encrypt
   }
 
   dynamic "network_interface" {
