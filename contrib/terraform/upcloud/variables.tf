@@ -54,7 +54,8 @@ variable "machines" {
     cpu       = string
     mem       = string
     disk_size = number
-    server_group : string
+    boot_disk_encrypt = optional(bool, false)
+    server_group : optional(string,null)
     force_public_ip : optional(bool, false)
     force_no_user_data : optional(bool, false)
     additional_disks = map(object({
