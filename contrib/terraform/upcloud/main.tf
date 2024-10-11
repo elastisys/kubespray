@@ -38,7 +38,6 @@ module "kubernetes" {
 
   loadbalancer_enabled                 = var.loadbalancer_enabled
   loadbalancer_plan                    = var.loadbalancer_plan
-  loadbalancer_outbound_proxy_protocol = var.loadbalancer_proxy_protocol ? "v2" : ""
   loadbalancer_legacy_network          = var.loadbalancer_legacy_network
   loadbalancers                        = var.loadbalancers
 
