@@ -124,9 +124,9 @@ worker_allowed_ports = []
 
 loadbalancer_enabled        = false
 loadbalancer_plan           = "development"
-loadbalancer_proxy_protocol = false
 loadbalancers = {
   # "http" : {
+  #   "proxy_protocol" : false
   #   "port" : 80,
   #   "target_port" : 80,
   #   "backend_servers" : [
