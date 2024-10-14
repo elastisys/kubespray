@@ -32,16 +32,31 @@ variable "private_network_cidr" {
   default     = "172.16.0.0/24"
 }
 
+variable "private_network_dns" {
+  description = "The DNS server for nodes when using private network only"
+
+  type    = set(string)
+  default = []
+}
+
+variable "use_public_ips" {
+  description = "If all nodes should get a public IP"
+  type        = bool
+  default     = true
+}
+
 variable "machines" {
   description = "Cluster machines"
 
   type = map(object({
     node_type = string
     plan      = string
-    cpu       = string
-    mem       = string
+    cpu       = optional(number)
+    mem       = optional(number)
     disk_size = number
     server_group : string
+    force_public_ip : optional(bool, false)
+    force_no_user_data : optional(bool, false)
     additional_disks = map(object({
       size = number
       tier = string
@@ -82,6 +97,15 @@ variable "master_allowed_remote_ips" {
 
 variable "k8s_allowed_remote_ips" {
   description = "List of IP start/end addresses allowed to SSH to hosts"
+  type = list(object({
+    start_address = string
+    end_address   = string
+  }))
+  default = []
+}
+
+variable "bastion_allowed_remote_ips" {
+  description = "List of IP start/end addresses allowed to SSH to bastion"
   type = list(object({
     start_address = string
     end_address   = string
@@ -131,11 +155,6 @@ variable "loadbalancer_plan" {
   default     = "development"
 }
 
-variable "loadbalancer_proxy_protocol" {
-  type    = bool
-  default = false
-}
-
 variable "loadbalancer_legacy_network" {
   description = "If the loadbalancer should use the deprecated network field instead of networks blocks. You probably want to have this set to false"
 
@@ -147,6 +166,7 @@ variable "loadbalancers" {
   description = "Load balancers"
 
   type = map(object({
+    proxy_protocol          = bool
     port                    = number
     target_port             = number
     allow_internal_frontend = optional(bool, false)
@@ -191,16 +211,16 @@ variable "gateways" {
       tunnels = optional(map(object({
         remote_address = string
         ipsec_properties = optional(object({
-          child_rekey_time = number
-          dpd_delay = number
-          dpd_timeout = number
-          ike_lifetime = number
-          rekey_time = number
-          phase1_algorithms = set(string)
-          phase1_dh_group_numbers = set(string)
+          child_rekey_time            = number
+          dpd_delay                   = number
+          dpd_timeout                 = number
+          ike_lifetime                = number
+          rekey_time                  = number
+          phase1_algorithms           = set(string)
+          phase1_dh_group_numbers     = set(string)
           phase1_integrity_algorithms = set(string)
-          phase2_algorithms = set(string)
-          phase2_dh_group_numbers = set(string)
+          phase2_algorithms           = set(string)
+          phase2_dh_group_numbers     = set(string)
           phase2_integrity_algorithms = set(string)
         }))
       })), {})
