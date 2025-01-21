@@ -10,13 +10,30 @@ locals {
     ]
   ])
 
-  lb_backend_servers = flatten([
-    for lb_name, loadbalancer in var.loadbalancers : [
-      for backend_server in loadbalancer.backend_servers : {
-        port        = loadbalancer.target_port
-        lb_name     = lb_name
-        server_name = backend_server
+  lb_targets = flatten([
+    for lb_name, lb in upcloud_loadbalancer.lb : [
+      for target_name, target in var.loadbalancers[lb_name].targets : {
+        name              = target_name
+        loadbalancer_name = lb_name
+        loadbalancer_id   = lb.id
+        listen_public     = target.listen_public
+        listen_private    = target.listen_private
+        proxy_protocol    = target.proxy_protocol
+        port              = target.target_port
       }
+    ]
+  ])
+
+  lb_backend_servers = flatten([
+    for lb_name, lb in upcloud_loadbalancer.lb : [
+      for target_name, target in var.loadbalancers[lb_name].targets : [
+        for backend_server in target.backend_servers : {
+          loadbalancer_name = lb_name
+          port              = target.target_port
+          target_name       = target_name
+          server_name       = backend_server
+        }
+      ]
     ]
   ])
 
@@ -700,15 +717,17 @@ resource "upcloud_firewall_rules" "bastion" {
 }
 
 resource "upcloud_loadbalancer" "lb" {
-  count             = var.loadbalancer_enabled ? 1 : 0
+
+  for_each = var.loadbalancer_enabled ? var.loadbalancers : {}
+
   configured_status = "started"
-  name              = "${local.resource-prefix}lb"
-  plan              = var.loadbalancer_plan
+  name              = "${local.resource-prefix}${each.key}-lb"
+  plan              = each.value.plan
   zone              = var.private_cloud ? var.public_zone : var.zone
-  network           = var.loadbalancer_legacy_network ? upcloud_network.private.id : null
+  network           = each.value.legacy_network ? upcloud_network.private.id : null
 
   dynamic "networks" {
-    for_each = var.loadbalancer_legacy_network ? [] : [1]
+    for_each = each.value.private_network ? [1] : []
 
     content {
       name    = "Private-Net"
@@ -719,7 +738,7 @@ resource "upcloud_loadbalancer" "lb" {
   }
 
   dynamic "networks" {
-    for_each = var.loadbalancer_legacy_network ? [] : [1]
+    for_each = each.value.public_network ? [1] : []
 
     content {
       name   = "Public-Net"
@@ -734,26 +753,35 @@ resource "upcloud_loadbalancer" "lb" {
 }
 
 resource "upcloud_loadbalancer_backend" "lb_backend" {
-  for_each = var.loadbalancer_enabled ? var.loadbalancers : {}
 
-  loadbalancer = upcloud_loadbalancer.lb[0].id
-  name         = "lb-backend-${each.key}"
+  for_each = {
+    for be_target in local.lb_targets :
+    "${be_target.loadbalancer_name}-${be_target.name}" => be_target
+    if var.loadbalancer_enabled
+  }
+  loadbalancer = each.value.loadbalancer_id
+
+  name = "lb-backend-${each.value.name}"
   properties {
     outbound_proxy_protocol = each.value.proxy_protocol ? "v2" : ""
   }
 }
 
 resource "upcloud_loadbalancer_frontend" "lb_frontend" {
-  for_each = var.loadbalancer_enabled ? var.loadbalancers : {}
+  for_each = {
+    for be_target in local.lb_targets :
+    "${be_target.loadbalancer_name}-${be_target.name}" => be_target
+    if var.loadbalancer_enabled
+  }
 
-  loadbalancer         = upcloud_loadbalancer.lb[0].id
-  name                 = "lb-frontend-${each.key}"
+  loadbalancer         = each.value.loadbalancer_id
+  name                 = "lb-frontend-${each.value.name}"
   mode                 = "tcp"
   port                 = each.value.port
-  default_backend_name = upcloud_loadbalancer_backend.lb_backend[each.key].name
+  default_backend_name = upcloud_loadbalancer_backend.lb_backend["${each.value.loadbalancer_name}-${each.value.name}"].name
 
   dynamic "networks" {
-    for_each = var.loadbalancer_legacy_network ? [] : [1]
+    for_each = each.value.listen_public ? [1] : []
 
     content {
       name = "Public-Net"
@@ -761,27 +789,33 @@ resource "upcloud_loadbalancer_frontend" "lb_frontend" {
   }
 
   dynamic "networks" {
-    for_each = each.value.allow_internal_frontend ? [1] : []
+    for_each = each.value.listen_private ? [1] : []
 
     content {
       name = "Private-Net"
     }
+  }
+
+   properties {
+    http2_enabled          = false
+    inbound_proxy_protocol = false
+    timeout_client         = 10
   }
 }
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_backend_member" {
   for_each = {
     for be_server in local.lb_backend_servers :
-    "${be_server.server_name}-lb-backend-${be_server.lb_name}" => be_server
+    "${be_server.loadbalancer_name}-${be_server.server_name}-lb-backend-${be_server.target_name}" => be_server
     if var.loadbalancer_enabled
   }
 
-  backend      = upcloud_loadbalancer_backend.lb_backend[each.value.lb_name].id
-  name         = "${local.resource-prefix}${each.key}"
+  backend      = upcloud_loadbalancer_backend.lb_backend["${each.value.loadbalancer_name}-${each.value.target_name}"].id
+  name         = "${local.resource-prefix}${each.value.server_name}-lb-backend-${each.value.target_name}"
   ip           = merge(local.master_ip, local.worker_ip)["${local.resource-prefix}${each.value.server_name}"].private
   port         = each.value.port
   weight       = 100
-  max_sessions = var.loadbalancer_plan == "production-small" ? 50000 : 1000
+  max_sessions = var.loadbalancers[each.value.loadbalancer_name].plan == "production-small" ? 50000 : 1000
   enabled      = true
 }
 

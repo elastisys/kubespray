@@ -153,29 +153,25 @@ variable "loadbalancer_enabled" {
   default     = false
 }
 
-variable "loadbalancer_plan" {
-  description = "Load balancer plan (development/production-small)"
-  default     = "development"
-}
-
-variable "loadbalancer_legacy_network" {
-  description = "If the loadbalancer should use the deprecated network field instead of networks blocks. You probably want to have this set to false"
-
-  type    = bool
-  default = false
-}
-
 variable "loadbalancers" {
   description = "Load balancers"
 
   type = map(object({
-    proxy_protocol          = bool
-    port                    = number
-    target_port             = number
-    allow_internal_frontend = optional(bool, false)
-    backend_servers         = list(string)
+
+    plan            = string
+    legacy_network  = bool
+    public_network  = bool
+    private_network = bool
+
+    targets = map(object({
+      proxy_protocol  = bool
+      port            = number
+      target_port     = number
+      listen_public   = bool
+      listen_private  = bool
+      backend_servers = list(string)
+    }))
   }))
-  default = {}
 }
 
 variable "server_groups" {

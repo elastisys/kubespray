@@ -11,5 +11,5 @@ output "bastion_ip" {
 }
 
 output "loadbalancer_domain" {
-  value = var.loadbalancer_enabled ? upcloud_loadbalancer.lb[0].dns_name : null
+  value = var.loadbalancer_enabled ? [for loadbalancer in upcloud_loadbalancer.lb : loadbalancer.dns_name] : []
 }

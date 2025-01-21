@@ -106,24 +106,23 @@ variable "loadbalancer_enabled" {
   type = bool
 }
 
-variable "loadbalancer_plan" {
-  type = string
-}
-
-variable "loadbalancer_legacy_network" {
-  type    = bool
-  default = false
-}
-
 variable "loadbalancers" {
   description = "Load balancers"
 
   type = map(object({
-    proxy_protocol          = bool
-    port                    = number
-    target_port             = number
-    allow_internal_frontend = optional(bool)
-    backend_servers         = list(string)
+    plan            = string
+    legacy_network  = bool
+    public_network  = bool
+    private_network = bool
+
+    targets = map(object({
+      proxy_protocol  = bool
+      port            = number
+      target_port     = number
+      listen_public   = bool
+      listen_private  = bool
+      backend_servers = list(string)
+    }))
   }))
 }
 
