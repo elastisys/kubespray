@@ -49,13 +49,13 @@ variable "machines" {
   description = "Cluster machines"
 
   type = map(object({
-    node_type = string
-    plan      = string
-    cpu       = optional(number)
-    mem       = optional(number)
-    disk_size = number
+    node_type         = string
+    plan              = string
+    cpu               = optional(number)
+    mem               = optional(number)
+    disk_size         = number
     boot_disk_encrypt = optional(bool, false)
-    server_group : optional(string,null)
+    server_group : optional(string, null)
     force_public_ip : optional(bool, false)
     dns_servers : optional(set(string))
     additional_disks = map(object({
