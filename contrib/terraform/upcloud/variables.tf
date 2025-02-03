@@ -56,9 +56,9 @@ variable "machines" {
     disk_size         = number
     template_name     = optional(string)
     boot_disk_encrypt = optional(bool, false)
-    server_group : optional(string, null)
-    force_public_ip : optional(bool, false)
-    dns_servers : optional(set(string))
+    server_group      = optional(string, null)
+    force_public_ip   = optional(bool, false)
+    dns_servers       = optional(set(string))
     additional_disks = map(object({
       size = number
       tier = string
@@ -172,6 +172,8 @@ variable "loadbalancers" {
       backend_servers = list(string)
     }))
   }))
+
+  default = {}
 }
 
 variable "server_groups" {
