@@ -19,7 +19,7 @@ locals {
         listen_public     = target.listen_public
         listen_private    = target.listen_private
         proxy_protocol    = target.proxy_protocol
-        port              = target.target_port
+        port              = target.port
       }
     ]
   ])
