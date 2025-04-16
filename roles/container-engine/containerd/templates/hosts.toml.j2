@@ -1,7 +1,13 @@
 server = "{{ item.server | default("https://" + item.prefix) }}"
+
 {% for mirror in item.mirrors %}
 [host."{{ mirror.host }}"]
   capabilities = ["{{ ([ mirror.capabilities ] | flatten ) | join('","') }}"]
   skip_verify = {{ mirror.skip_verify | default('false') | string | lower }}
   override_path = {{ mirror.override_path | default('false') | string | lower }}
+{% if mirror.auth is defined %}
+  [host."{{ mirror.host }}".header]
+    header = "Basic {{ (mirror.auth.username + ':' + mirror.auth.password) | b64encode }}"
+{% endif %}
+
 {% endfor %}
