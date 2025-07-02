@@ -39,7 +39,7 @@
 
 - name: Cilium | Render values
   template:
-    src: values.yaml.j2
+    src: merged.yaml.j2
     dest: "{{ kube_config_dir }}/cilium-values.yaml"
     mode: "0644"
   when:

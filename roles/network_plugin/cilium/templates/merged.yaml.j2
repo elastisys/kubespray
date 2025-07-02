@@ -1,0 +1,6 @@
+{%- set values_content = lookup('template', 'values.yaml.j2') | from_yaml -%}
+{%- set ck8s_content = lookup('template', 'ck8s-values.yaml.j2') | from_yaml -%}
+
+{%- set merged = values_content | combine(ck8s_content, recursive=True, list_merge='append') -%}
+
+{{ merged | to_nice_yaml(indent=2) }}
