@@ -32,4 +32,9 @@ prometheus:
 
 envoy:
   enabled: {{ ck8s_cilium.envoy.enabled }}
+
+{% if ck8s_cilium.enableNodeSelectability | default(false) %}
+policyCIDRMatchMode: nodes
+{% endif %}
+
 {% endif %}
