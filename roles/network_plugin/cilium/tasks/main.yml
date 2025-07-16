@@ -10,5 +10,9 @@
   when: cilium_remove_old_resources
   include_tasks: remove_old_resources.yml
 
+- name: Cilium run pre apply hooks
+  loop: "{{ cilium_pre_apply_hooks | default([]) }}"
+  ansible.builtin.include_tasks: "{{ item }}"
+
 - name: Cilium apply
   include_tasks: apply.yml
