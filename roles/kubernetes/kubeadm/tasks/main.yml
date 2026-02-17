@@ -213,3 +213,7 @@
   loop: "{{ post_kubeadm_hooks | default([]) }}"
   ansible.builtin.include_tasks: "{{ item }}"
     - kube_network_plugin != "cilium" or cilium_identity_allocation_mode != 'crd'
+
+- name: Run post kubeadm hooks
+  loop: "{{ post_kubeadm_hooks | default([]) }}"
+  ansible.builtin.include_tasks: "{{ item }}"
