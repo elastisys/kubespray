@@ -119,11 +119,24 @@ variable "loadbalancers" {
   description = "Load balancers"
 
   type = map(object({
-    proxy_protocol          = bool
-    port                    = number
-    target_port             = number
-    allow_internal_frontend = optional(bool)
-    backend_servers         = list(string)
+
+    plan            = string
+    legacy_network  = bool
+    public_network  = bool
+    private_network    = bool
+    create_floating_ip = optional(bool, false)
+    ip_addresses = optional(list(object({
+      address      = string
+      network_name = string
+    })), [])
+    targets = map(object({
+      proxy_protocol  = bool
+      port            = number
+      target_port     = number
+      listen_public   = bool
+      listen_private  = bool
+      backend_servers = list(string)
+    }))
   }))
 }
 
