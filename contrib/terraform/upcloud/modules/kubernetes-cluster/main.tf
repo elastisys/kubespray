@@ -713,8 +713,17 @@ resource "upcloud_firewall_rules" "bastion" {
   }
 }
 
+resource "upcloud_floating_ip_address" "lb_floating_ip" {
+  for_each = {
+    for name, loadbalancer in var.loadbalancers : name => loadbalancer
+    if var.loadbalancer_enabled && try(loadbalancer.create_floating_ip, false)
+  }
+  zone = var.private_cloud ? var.public_zone : var.zone
+}
+
 resource "upcloud_loadbalancer" "lb" {
-  count             = var.loadbalancer_enabled ? 1 : 0
+  for_each = var.loadbalancer_enabled ? var.loadbalancers : {}
+
   configured_status = "started"
   name              = "${local.resource-prefix}lb"
   plan              = var.loadbalancer_plan
@@ -731,6 +740,13 @@ resource "upcloud_loadbalancer" "lb" {
       network = upcloud_network.private.id
     }
   }
+
+  ip_addresses = concat(try(each.value.create_floating_ip, false) ? [
+    {
+      address      = upcloud_floating_ip_address.lb_floating_ip[each.key].ip_address
+      network_name = "Public-Net"
+    }
+  ] : [], each.value.ip_addresses)
 
   dynamic "networks" {
     for_each = var.loadbalancer_legacy_network ? [] : [1]
@@ -780,6 +796,12 @@ resource "upcloud_loadbalancer_frontend" "lb_frontend" {
     content{
       name = "Private-Net"
     }
+  }
+
+  properties {
+    http2_enabled          = false
+    inbound_proxy_protocol = false
+    timeout_client         = 10
   }
 }
 
