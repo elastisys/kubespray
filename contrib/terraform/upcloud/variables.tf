@@ -155,14 +155,15 @@ variable "loadbalancer_enabled" {
 
 variable "loadbalancers" {
   description = "Load balancers"
-
   type = map(object({
-
     plan            = string
     legacy_network  = bool
     public_network  = bool
     private_network = bool
-
+    ip_addresses = optional(list(object({
+      address      = string
+      network_name = string
+    })), [])
     targets = map(object({
       proxy_protocol  = bool
       port            = number
@@ -172,7 +173,6 @@ variable "loadbalancers" {
       backend_servers = list(string)
     }))
   }))
-
   default = {}
 }
 

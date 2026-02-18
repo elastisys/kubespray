@@ -739,6 +739,8 @@ resource "upcloud_loadbalancer" "lb" {
     }
   }
 
+  ip_addresses = each.value.ip_addresses
+
   dynamic "networks" {
     for_each = each.value.public_network ? [1] : []
 
@@ -798,7 +800,7 @@ resource "upcloud_loadbalancer_frontend" "lb_frontend" {
     }
   }
 
-   properties {
+  properties {
     http2_enabled          = false
     inbound_proxy_protocol = false
     timeout_client         = 10
