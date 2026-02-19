@@ -160,6 +160,7 @@ variable "loadbalancers" {
     legacy_network  = bool
     public_network  = bool
     private_network = bool
+    create_floating_ip = optional(bool, false)
     ip_addresses = optional(list(object({
       address      = string
       network_name = string

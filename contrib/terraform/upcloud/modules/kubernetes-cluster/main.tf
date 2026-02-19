@@ -718,19 +718,23 @@ resource "upcloud_firewall_rules" "bastion" {
   }
 }
 
+resource "upcloud_floating_ip_address" "lb_floating_ip" {
+  for_each = {
+    for k, v in var.loadbalancers : k => v
+    if var.loadbalancer_enabled && try(v.create_floating_ip, false)
+  }
+  zone = var.private_cloud ? var.public_zone : var.zone
+}
+
 resource "upcloud_loadbalancer" "lb" {
-
-  for_each = var.loadbalancer_enabled ? var.loadbalancers : {}
-
+  for_each          = var.loadbalancer_enabled ? var.loadbalancers : {}
   configured_status = "started"
   name              = "${local.resource-prefix}${each.key}-lb"
   plan              = each.value.plan
   zone              = var.private_cloud ? var.public_zone : var.zone
   network           = each.value.legacy_network ? upcloud_network.private.id : null
-
   dynamic "networks" {
     for_each = each.value.private_network ? [1] : []
-
     content {
       name    = "Private-Net"
       type    = "private"
@@ -738,19 +742,20 @@ resource "upcloud_loadbalancer" "lb" {
       network = upcloud_network.private.id
     }
   }
-
-  ip_addresses = each.value.ip_addresses
-
+  ip_addresses = try(each.value.create_floating_ip, false) ? [
+    {
+      address      = upcloud_floating_ip_address.lb_floating_ip[each.key].ip_address
+      network_name = "Public-Net"
+    }
+  ] : each.value.ip_addresses
   dynamic "networks" {
     for_each = each.value.public_network ? [1] : []
-
     content {
       name   = "Public-Net"
       type   = "public"
       family = "IPv4"
     }
   }
-
   lifecycle {
     ignore_changes = [maintenance_dow, maintenance_time]
   }
