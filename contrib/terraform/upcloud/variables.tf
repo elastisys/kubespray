@@ -153,18 +153,6 @@ variable "loadbalancer_enabled" {
   default     = false
 }
 
-variable "loadbalancer_plan" {
-  description = "Load balancer plan (development/production-small)"
-  default     = "development"
-}
-
-variable "loadbalancer_legacy_network" {
-  description = "If the loadbalancer should use the deprecated network field instead of networks blocks. You probably want to have this set to false"
-
-  type    = bool
-  default = false
-}
-
 variable "loadbalancers" {
   description = "Load balancers"
 

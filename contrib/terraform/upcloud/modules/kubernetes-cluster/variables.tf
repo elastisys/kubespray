@@ -106,15 +106,6 @@ variable "loadbalancer_enabled" {
   type = bool
 }
 
-variable "loadbalancer_plan" {
-  type = string
-}
-
-variable "loadbalancer_legacy_network" {
-  type = bool
-  default = false
-}
-
 variable "loadbalancers" {
   description = "Load balancers"
 
@@ -158,30 +149,30 @@ variable "gateways" {
 
   type = map(object({
     features = list(string)
-    plan = optional(string)
+    plan     = optional(string)
     connections = optional(map(object({
       type = string
       local_routes = optional(map(object({
-        type = string
+        type           = string
         static_network = string
       })))
       remote_routes = optional(map(object({
-        type = string
+        type           = string
         static_network = string
       })))
       tunnels = optional(map(object({
         remote_address = string
         ipsec_properties = optional(object({
-          child_rekey_time = number
-          dpd_delay = number
-          dpd_timeout = number
-          ike_lifetime = number
-          rekey_time = number
-          phase1_algorithms = set(string)
-          phase1_dh_group_numbers = set(string)
+          child_rekey_time            = number
+          dpd_delay                   = number
+          dpd_timeout                 = number
+          ike_lifetime                = number
+          rekey_time                  = number
+          phase1_algorithms           = set(string)
+          phase1_dh_group_numbers     = set(string)
           phase1_integrity_algorithms = set(string)
-          phase2_algorithms = set(string)
-          phase2_dh_group_numbers = set(string)
+          phase2_algorithms           = set(string)
+          phase2_dh_group_numbers     = set(string)
           phase2_integrity_algorithms = set(string)
         }))
       })))
@@ -195,7 +186,7 @@ variable "gateway_vpn_psks" {
   type = map(object({
     psk = string
   }))
-  default = {}
+  default   = {}
   sensitive = true
 }
 
@@ -204,7 +195,7 @@ variable "static_routes" {
 
   type = map(object({
     nexthop = string
-    route = string
+    route   = string
   }))
 }
 
