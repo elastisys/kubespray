@@ -170,6 +170,7 @@ variable "loadbalancers" {
       listen_public   = bool
       listen_private  = bool
       backend_servers = list(string)
+      allowed_cidrs   = optional(list(string), [])
     }))
   }))
 
