@@ -37,6 +37,29 @@ locals {
     ]
   ])
 
+  lb_frontend_rules = flatten([
+    for lb_name, lb in upcloud_loadbalancer.lb : [
+      for target_name, target in var.loadbalancers[lb_name].targets : [
+        for allowed_ip in target.allowed_cidrs : {
+          loadbalancer_name = lb_name
+          target_name       = target_name
+          src_ip            = allowed_ip
+        }
+      ]
+    ]
+  ])
+
+  lb_frontend_deny_rules = flatten([
+    for lb_name, lb in upcloud_loadbalancer.lb : [
+      for target_name, target in var.loadbalancers[lb_name].targets : [
+        for deny_rule in (length(target.allowed_cidrs) > 0 ? [1] : []) : {
+          loadbalancer_name = lb_name
+          target_name       = target_name
+        }
+      ]
+    ]
+  ])
+
   gateway_connections = flatten([
     for gateway_name, gateway in var.gateways : [
       for connection_name, connection in gateway.connections : {
@@ -764,6 +787,48 @@ resource "upcloud_loadbalancer_backend" "lb_backend" {
   name = "lb-backend-${each.value.name}"
   properties {
     outbound_proxy_protocol = each.value.proxy_protocol ? "v2" : ""
+  }
+}
+
+resource "upcloud_loadbalancer_frontend_rule" "lb_frontend_rule" {
+  for_each = {
+    for i, fe_rule in local.lb_frontend_rules :
+    "lb-frontend-rule-${fe_rule.loadbalancer_name}-${fe_rule.target_name}-${i}" => fe_rule
+    if var.loadbalancer_enabled
+  }
+
+  frontend = upcloud_loadbalancer_frontend.lb_frontend["${each.value.loadbalancer_name}-${each.value.target_name}"].id
+  name     = "${each.key}"
+  priority = 20 # Higher priority than default deny
+
+  matchers {
+    src_ip {
+      value = "${each.value.src_ip}"
+    }
+  }
+
+  actions {
+    use_backend {
+      backend_name = upcloud_loadbalancer_backend.lb_backend["${each.value.loadbalancer_name}-${each.value.target_name}"].name
+    }
+  }
+}
+
+resource "upcloud_loadbalancer_frontend_rule" "lb_frontend_deny_rule" {
+  for_each = {
+    for i, fe_rule in local.lb_frontend_deny_rules :
+    "lb-frontend-deny-rule-${fe_rule.loadbalancer_name}-${fe_rule.target_name}" => fe_rule
+    if var.loadbalancer_enabled
+  }
+
+  frontend = upcloud_loadbalancer_frontend.lb_frontend["${each.value.loadbalancer_name}-${each.value.target_name}"].id
+  name     = "${each.key}"
+  priority = 10 # Lower than allowlisting above.
+
+  actions {
+    tcp_reject {
+
+    }
   }
 }
 
