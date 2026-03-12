@@ -115,6 +115,7 @@ terraform destroy --var-file cluster-settings.tfvars \
   * `target_port`: Port to the backend servers.
   * `backend_servers`: List of servers that traffic to the port should be forwarded to.
   * `proxy_protocol`: If the loadbalancer should set up the backend using proxy protocol.
+  * `allowed_cidrs`: List of CIDRs that should be allowlisted. If empty or missing, all traffic is allowed.
 * `router_enable`: If a router should be connected to the private network or not
 * `gateways`: Gateways that should be connected to the router, requires router_enable is set to true
   * `features`: List of features for the gateway
