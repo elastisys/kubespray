@@ -124,6 +124,11 @@ variable "loadbalancers" {
     target_port             = number
     allow_internal_frontend = optional(bool)
     backend_servers         = list(string)
+    create_floating_ip = optional(bool, false)
+    ip_addresses = optional(list(object({
+      address      = string
+      network_name = string
+    })), [])
   }))
 }
 
