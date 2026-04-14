@@ -169,9 +169,9 @@ resource "upcloud_server" "master" {
     network = upcloud_network.private.id
   }
 
-  # Ignore volumes created by csi-driver
+  # Ignore volumes created by csi-driver and changes to SSH keys
   lifecycle {
-    ignore_changes = [storage_devices]
+    ignore_changes = [storage_devices, login]
   }
 
   firewall = var.firewall_enabled
@@ -235,9 +235,9 @@ resource "upcloud_server" "worker" {
     network = upcloud_network.private.id
   }
 
-  # Ignore volumes created by csi-driver
+  # Ignore volumes created by csi-driver and changes to SSH keys
   lifecycle {
-    ignore_changes = [storage_devices]
+    ignore_changes = [storage_devices, login]
   }
 
   firewall = var.firewall_enabled
@@ -295,6 +295,11 @@ resource "upcloud_server" "bastion" {
   # Private network interface
   network_interface {
     type    = "public"
+  }
+
+  # Ignore changes to SSH keys
+  lifecycle {
+    ignore_changes = [login]
   }
 
   firewall = var.firewall_enabled
