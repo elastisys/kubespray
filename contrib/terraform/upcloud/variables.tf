@@ -78,10 +78,20 @@ variable "inventory_file" {
 
 variable "UPCLOUD_USERNAME" {
   description = "UpCloud username with API access"
+  default     = null
+  sensitive   = true
 }
 
 variable "UPCLOUD_PASSWORD" {
   description = "Password for UpCloud API user"
+  default     = null
+  sensitive   = true
+}
+
+variable "UPCLOUD_TOKEN" {
+  description = "Token for UpCloud API access"
+  default     = null
+  sensitive   = true
 }
 
 variable "firewall_enabled" {
