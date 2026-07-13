@@ -1,13 +1,16 @@
 ---
-- name: UpCloud CSI Driver | Check if UPCLOUD_USERNAME exists
+- name: UpCloud CSI Driver | Check if UpCloud authentication is provided
   fail:
-    msg: "UpCloud username is missing. Env UPCLOUD_USERNAME is mandatory"
-  when: upcloud_username is not defined or not upcloud_username
+    msg: "UpCloud credentials missing. Please define either UPCLOUD_TOKEN OR UPCLOUD_USERNAME and UPCLOUD_PASSWORD"
+  when:
+    - upcloud_token is not defined or not upcloud_token
+    - upcloud_username is not defined or not upcloud_username
 
 - name: UpCloud CSI Driver | Check if UPCLOUD_PASSWORD exists
   fail:
-    msg: "UpCloud password is missing. Env UPCLOUD_PASSWORD is mandatory"
+    msg: "UpCloud password is missing. Env UPCLOUD_PASSWORD is mandatory when UPCLOUD_USERNAME is set"
   when:
+    - upcloud_token is not defined or not upcloud_token
     - upcloud_username is defined
     - upcloud_username | length > 0
     - upcloud_password is not defined or not upcloud_password
