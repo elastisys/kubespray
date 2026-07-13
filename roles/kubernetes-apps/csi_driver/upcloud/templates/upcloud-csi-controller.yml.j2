@@ -81,6 +81,13 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+{% if upcloud_token is defined and upcloud_token %}
+            - name: UPCLOUD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: upcloud
+                  key: token
+{% else %}
             - name: UPCLOUD_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -91,6 +98,7 @@ spec:
                 secretKeyRef:
                   name: upcloud
                   key: password
+{% endif %}
             - name: NODE_ID
               valueFrom:
                 fieldRef:
