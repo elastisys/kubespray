@@ -11,7 +11,7 @@ upcloud_token: "{{ lookup('env', 'UPCLOUD_TOKEN') }}"
 upcloud_tolerations: []
 upcloud_csi_enable_volume_snapshot: false
 upcloud_csi_snapshot_controller_replicas: 2
-upcloud_csi_snapshotter_image_tag: "v4.2.1"
+upcloud_csi_snapshotter_image_tag: "v6.3.2"
 upcloud_csi_snapshot_controller_image_tag: "v4.2.1"
 upcloud_csi_snapshot_validation_webhook_image_tag: "v4.2.1"
 upcloud_cacert: "{{ lookup('env', 'OS_CACERT') }}"
