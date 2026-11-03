@@ -7,6 +7,7 @@
     timeout -k 600s 600s
     {{ bin_dir }}/kubeadm upgrade apply -y v{{ kube_version }}
     --config={{ kube_config_dir }}/kubeadm-config.yaml
+    --ignore-preflight-errors=CoreDNSUnsupportedPlugins,CoreDNSMigration
   register: kubeadm_upgrade
   when: inventory_hostname == first_kube_control_plane
   failed_when: kubeadm_upgrade.rc != 0 and "field is immutable" not in kubeadm_upgrade.stderr
@@ -17,6 +18,7 @@
   command: >-
     {{ bin_dir }}/kubeadm upgrade node
     --config={{ kube_config_dir }}/kubeadm-config.yaml
+    --ignore-preflight-errors=CoreDNSUnsupportedPlugins,CoreDNSMigration
   register: kubeadm_upgrade
   when: inventory_hostname != first_kube_control_plane
   failed_when: kubeadm_upgrade.rc != 0 and "field is immutable" not in kubeadm_upgrade.stderr
